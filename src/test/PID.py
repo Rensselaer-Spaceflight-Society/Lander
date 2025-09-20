@@ -3,6 +3,7 @@ import time
 import RPi.GPIO as GPIO
 import smbus					#import SMBus module of I2C
 from time import sleep          #import time
+import math
 
 # sudo pigpiod
 # sudo killall pigpiod
@@ -15,30 +16,6 @@ gpiozero.Device.pin_factory = PiGPIOFactory('127.0.0.1')
 from gpiozero import AngularServo
 
 # GPIO.setmode(GPIO.BCM)
-
-# servoPIN_n = 17
-# GPIO.setup(servoPIN_n, GPIO.OUT)
-
-# p1 = GPIO.PWM(servoPIN_n, 50) # GPIO 17 for PWM with 50Hz
-# p1.start(2.5) # Initialization
-
-# servoPIN_e = 27
-# GPIO.setup(servoPIN_e, GPIO.OUT)
-
-# p2 = GPIO.PWM(servoPIN_e, 50) # GPIO 27 for PWM with 50Hz
-# p2.start(2.5) # Initialization
-
-# servoPIN_s = 22
-# GPIO.setup(servoPIN_s, GPIO.OUT)
-
-# p3 = GPIO.PWM(servoPIN_s, 50) # GPIO 22 for PWM with 50Hz
-# p3.start(2.5) # Initialization
-
-# servoPIN_w = 23
-# GPIO.setup(servoPIN_w, GPIO.OUT)
-
-# p4 = GPIO.PWM(servoPIN_w, 50) # GPIO 23 for PWM with 50Hz
-# p4.start(2.5) # Initialization
 
 #some MPU6050 Registers and their Address
 PWR_MGMT_1   = 0x6B
@@ -97,6 +74,17 @@ servoPIN_n = 17
 servoPIN_e = 23
 servoPIN_s = 22
 servoPIN_w = 27
+prevN = 0.0 #+y
+prevS = 0.0 #-y
+prevE = 0.0	#+x
+prevW = 0.0	#-x
+
+
+currN = 0.0
+currS = 0.0
+currE = 0.0
+currW = 0.0
+
 
 
 # angles = [[0, 30], [0, 30], [?]]
@@ -113,26 +101,56 @@ try:
 	y_thres = -0.2
 	dummy = 0.2
 	neg_dummy = -0.2
+
+	# kp = 0.005
+	# ki = 0.0003
+	# kd = 0.0002
+	kp = 10
+	ki = 0.3
+	kd = 0.01
+	iS = 0.0
+	iN = 0.0
+	iW = 0.0
+	iE = 0.0
+	intgralS = 0.0
+	intgralN = 0.0
+	intgralW = 0.0
+	intgralE = 0.0
+
+	# MOVE THESE UP
+	iteration_time = 0.1
+	integral_prior = 0
+	error_prior = 0
+
 	while True:
 		
 		#Read Accelerometer raw value
 		acc_x = read_raw_data(ACCEL_XOUT_H)
 		acc_y = read_raw_data(ACCEL_YOUT_H)
 		acc_z = read_raw_data(ACCEL_ZOUT_H)
-		
+
 		#Read Gyroscope raw value
 		gyro_x = read_raw_data(GYRO_XOUT_H)
 		gyro_y = read_raw_data(GYRO_YOUT_H)
 		gyro_z = read_raw_data(GYRO_ZOUT_H)
-		
+
 		#Full scale range +/- 250 degree/C as per sensitivity scale factor
 		Ax = acc_x/16384.0
 		Ay = acc_y/16384.0
 		Az = acc_z/16384.0
-		
+		# if abs(Ax) < 0.1:
+		# 	Ax = 0.0
+		# if abs(Ay) < 0.1:
+		# 	Ay = 0.0
+		# if abs(Az) < 0.08:
+		# 	Az = 0.0
+
 		Gx = gyro_x/131.0
 		Gy = gyro_y/131.0
 		Gz = gyro_z/131.0
+
+		XZ_angle = math.atan(Ax/Az)
+		YZ_angle = math.atan(Ay/Az)
 
 		# if Ax > 0.15:
 		# 	p1.ChangeDutyCycle(10)
@@ -155,12 +173,81 @@ try:
 		# 	time.sleep(0.1)
 
 
-		print ("Gx=%.2f" %Gx, u'\u00b0'+ "/s", "\tGy=%.2f" %Gy, u'\u00b0'+ "/s", "\tGz=%.2f" %Gz, u'\u00b0'+ "/s", "\tAx=%.2f g" %Ax, "\tAy=%.2f g" %Ay, "\tAz=%.2f g" %Az) 	
+		# print ("Gx=%.2f" %Gx, u'\u00b0'+ "/s", "\tGy=%.2f" %Gy, u'\u00b0'+ "/s", "\tGz=%.2f" %Gz, u'\u00b0'+ "/s", "\tAx=%.2f g" %Ax, "\tAy=%.2f g" %Ay, "\tAz=%.2f g" %Az) 	
 		sleep(.1)
 		# servoS.angle = 0
 		# servoE.angle = 30
 		# servoN.angle = 0
 		# servoW.angle = 0
+		# porS = -YZ_angle*kp
+		# derS = -kd*(currS - prevS) / 0.1
+		# iS += currS * 0.1
+		# intgralS -= iS
+		# prevS = currS
+		# currS = porS + derS + (ki * intgralS)
+
+
+
+		# porS = -YZ_angle*kp
+		# derS = kd*(currS - prevS) / 0.1
+		# iS += -YZ_angle*0.1 #currS * 0.1 TOD: WE LEFT OFF HERE
+		# intgralS += iS
+		# prevS = currS
+		# currS = 0.5 + porS + (ki * intgralS) #+ derS
+		# print(currS, porS, intgralS, derS, -YZ_angle)
+
+		# while(1) {
+			# error = desired_value – actual_value
+			# integral = integral_prior + error * iteration_time
+			# derivative = (error – error_prior) / iteration_time
+			# output = KP*error + KI*integral + KD*derivative + bias
+			# error_prior = error
+			# integral_prior = integral
+			# sleep(iteration_time)
+		# }
+
+
+
+		error = -0.067 - (-YZ_angle)
+		integral = integral_prior + error * iteration_time
+		derivative = (error - error_prior) / iteration_time
+		output = kp*error + ki*integral + kd*derivative + 0
+		error_prior = error
+		integral_prior = integral
+		# print(kp*error, ki*integral, kd*derivative, output)
+		print(output, 0.5*(math.degrees(output)+360))
+
+		#TODO:
+		# fix servos to test if we want kd or not
+		# Update pid code for other servos and clean up formatting
+		# Fix git repo
+
+		# print(-YZ_angle)
+		# servoS.angle = math.degrees(output)
+
+
+		# porN = Ax*kp
+		# derN = kd*(currN - prevN)/0.1
+		# iN -= Ax
+		# intgralN -= iN*0.1
+		# servoN.angle = porN + derN + (ki * intgralN)
+
+		# porE = Ay * kp
+		# derE = kd*(currE - prevE) / 0.1
+		# iE -= Ay
+		# intgralE -= iE * 0.1
+		# servoE.angle = porE + derE + (ki * intgralE)
+
+		# porW = -Ay * kp
+		# derW = kd*(currW - prevW) / 0.1
+		# iW += Ay
+		# intgralW += iW * 0.1
+		# servoW.angle = porW + derW + (ki * intgralW)
+
+
+
+
+		"""
 		
 		if Ax > dummy and posx_thres == dummy:
 			servoS.angle = 20
@@ -196,6 +283,6 @@ try:
 			servoW.angle = 0
 			y_thres = neg_dummy
 			sleep(.1)
-
+        """
 except KeyboardInterrupt:
 	print("stop")
