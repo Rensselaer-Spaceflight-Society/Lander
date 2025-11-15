@@ -3,6 +3,8 @@
 # Since you are testing your motor, I hope you don't have your propeller attached to it otherwise you are in trouble my friend...?
 # This program is made by AGT @instructable.com. DO NOT REPUBLISH THIS PROGRAM... actually the program itself is harmful                                             pssst Its not, its safe.
 
+# Min: 1100
+# Max: 1330
 import os     #importing os library so as to communicate with the system
 import time   #importing time library to make Rpi wait because its too impatient
 os.system ("sudo pigpiod") #Launching GPIO library
@@ -62,7 +64,7 @@ def calibrate():   #This is the auto calibration procedure of a normal ESC
 def control():
     print ("I'm Starting the motor, I hope its calibrated and armed, if not restart by giving 'x'")
     time.sleep(1)
-    speed = 1500    # change your speed if you want to.... it should be between 700 - 2000
+    speed = 700    # change your speed if you want to.... it should be between 700 - 2000
     print ("Controls - a to decrease speed & d to increase speed OR q to decrease a lot of speed & e to increase a lot of speed")
     while True:
         pi.set_servo_pulsewidth(ESC, speed)

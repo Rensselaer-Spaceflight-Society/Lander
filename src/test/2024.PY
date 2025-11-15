@@ -162,40 +162,40 @@ try:
 		# servoN.angle = 0
 		# servoW.angle = 0
 		
-		if Ax > dummy and posx_thres == dummy:
-			servoS.angle = 20
-			posx_thres = 0.1
-			sleep(.1)
-		elif posx_thres == 0.1 and Ax < posx_thres:
-			servoS.angle = 0
-			posx_thres = dummy
-			sleep(.1)
-		if Ay > dummy and posy_thres == dummy:
-			servoE.angle = 50
-			posy_thres = 0.1
-			sleep(.1)
-		elif posy_thres == .1 and Ay < posy_thres:
-			servoE.angle = 30
-			posy_thres = dummy
-			sleep(.1)
+		# if Ax > dummy and posx_thres == dummy:
+		# 	servoS.angle = 20
+		# 	posx_thres = 0.1
+		# 	sleep(.1)
+		# elif posx_thres == 0.1 and Ax < posx_thres:
+		# 	servoS.angle = 0
+		# 	posx_thres = dummy
+		# 	sleep(.1)
+		# if Ay > dummy and posy_thres == dummy:
+		# 	servoE.angle = 50
+		# 	posy_thres = 0.1
+		# 	sleep(.1)
+		# elif posy_thres == .1 and Ay < posy_thres:
+		# 	servoE.angle = 30
+		# 	posy_thres = dummy
+		# 	sleep(.1)
 
-		if Ax < neg_dummy and x_thres == neg_dummy:
-			servoN.angle = 20
-			x_thres = -0.1
-			sleep(.1)
-		elif x_thres == -0.1 and Ax > x_thres:
-			servoN.angle = 0
-			x_thres = neg_dummy
-			sleep(.1)
+		# if Ax < neg_dummy and x_thres == neg_dummy:
+		# 	servoN.angle = 20
+		# 	x_thres = -0.1
+		# 	sleep(.1)
+		# elif x_thres == -0.1 and Ax > x_thres:
+		# 	servoN.angle = 0
+		# 	x_thres = neg_dummy
+		# 	sleep(.1)
 
-		if Ay < neg_dummy and y_thres == neg_dummy:
-			servoW.angle = 20
-			y_thres = -0.1
-			sleep(.1)
-		elif y_thres == -0.1 and Ay > y_thres:
-			servoW.angle = 0
-			y_thres = neg_dummy
-			sleep(.1)
+		# if Ay < neg_dummy and y_thres == neg_dummy:
+		# 	servoW.angle = 20
+		# 	y_thres = -0.1
+		# 	sleep(.1)
+		# elif y_thres == -0.1 and Ay > y_thres:
+		# 	servoW.angle = 0
+		# 	y_thres = neg_dummy
+		# 	sleep(.1)
 
 except KeyboardInterrupt:
 	print("stop")
