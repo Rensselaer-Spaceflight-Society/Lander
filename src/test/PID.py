@@ -1,13 +1,8 @@
 import time
 
-import RPi.GPIO as GPIO
 import smbus					#import SMBus module of I2C
-from time import sleep          #import time
 import math
 import pigpio
-
-# sudo pigpiod
-# sudo killall pigpiod
 
 # from gpiozero import Servo
 import gpiozero
@@ -15,8 +10,6 @@ from gpiozero.pins.pigpio import PiGPIOFactory
 
 gpiozero.Device.pin_factory = PiGPIOFactory('127.0.0.1')
 from gpiozero import AngularServo
-
-# GPIO.setmode(GPIO.BCM)
 
 #some MPU6050 Registers and their Address
 PWR_MGMT_1   = 0x6B
@@ -63,17 +56,10 @@ def read_raw_data(addr):
 
 
 
-
-
-
 bus = smbus.SMBus(1) 	# or bus = smbus.SMBus(0) for older version boards
 Device_Address = 0x68   # MPU6050 device address
 
 MPU_Init()
-servo_min = []
-servo_max = [12]
-# Todo tune with gpiozero angularservo libl
-# min_angle=-135, max_angle=135,
 
 servoPIN_n = 17
 servoPIN_e = 23
@@ -83,7 +69,6 @@ prevN = 0.0 #+y
 prevS = 0.0 #-y
 prevE = 0.0	#+x
 prevW = 0.0	#-x
-
 
 currN = 0.0
 currS = 0.0
@@ -107,12 +92,24 @@ servoS = AngularServo(servoPIN_s, initial_angle=0, min_angle=0, max_angle=180, m
 Gx_offset = -0.28100763358778624
 Gy_offset = 0.0648854961832061
 Gz_offset = 0.09798473282442748
-Ax_moffset = 0.00068659
-Ax_boffset = 0.00044735
-Ay_moffset = -0.99912144
-Ay_boffset = 0.01813737
-Az_moffset = 0.99785623
-Az_boffset = -0.0370675
+Ax_moffset = -0.99430131
+Ax_boffset = 0.02041231
+Ay_moffset = -0.99869671
+Ay_boffset = 0.02664353
+Az_moffset = -0.99757678
+Az_boffset = 0.0469103
+
+# Comparison coeffs
+# Gx_offset = 0
+# Gy_offset = 0
+# Gz_offset = 0
+# Ax_moffset = 1
+# Ax_boffset = 0
+# Ay_moffset = 1
+# Ay_boffset = 0
+# Az_moffset = 1
+# Az_boffset = 0
+
 
 print (" Reading Data of Gyroscope and Accelerometer")
 
@@ -139,13 +136,9 @@ try:
 	intgralW = 0.0
 	intgralE = 0.0
 
-	# MOVE THESE UP
 	iteration_time = 0.1
-	integral = 0
-	error_prior = 0
-
-	Gint = 0
-	angle_prior = 0
+	YZ_integral = 0
+	YZ_error_prior = 0
 
 	while True:
 		
@@ -186,29 +179,10 @@ try:
 		YZ_angle = math.atan(Ay/Az)
 		
 
-		# if Ax > 0.15:
-		# 	p1.ChangeDutyCycle(10)
-		# 	p3.ChangeDutyCycle(5)
-		# 	time.sleep(0.1)
-		# if Ay > 0.15:	
-		# 	p4.ChangeDutyCycle(10)
-		# 	p2.ChangeDutyCycle(5)
-		# 	time.sleep(0.1)
+		# print ("Gx=%.2f" %Gx, u'\u00b0'+ "/s", "\tGy=%.2f" %Gy, u'\u00b0'+ "/s", "\tGz=%.2f" %Gz, u'\u00b0'+ "/s", "\tAx=%.8f g" %Ax, "\tAy=%.2f g" %Ay, "\tAz=%.2f g" %Az) 	
+		print ("Ax=%.8f g" %Ax, "\tAy=%.2f g" %Ay, "\tAz=%.2f g" %Az) 	
 		
-		# if Ax < -0.15:
-		# 	print("Two")
-		# 	p1.ChangeDutyCycle(5)
-		# 	p3.ChangeDutyCycle(10)
-		# 	time.sleep(0.1)
-		
-		# if Ay < -0.15:
-		# 	p4.ChangeDutyCycle(5)
-		# 	p2.ChangeDutyCycle(10)
-		# 	time.sleep(0.1)
-
-
-		print ("Gx=%.2f" %Gx, u'\u00b0'+ "/s", "\tGy=%.2f" %Gy, u'\u00b0'+ "/s", "\tGz=%.2f" %Gz, u'\u00b0'+ "/s", "\tAx=%.8f g" %Ax, "\tAy=%.2f g" %Ay, "\tAz=%.2f g" %Az) 	
-		sleep(.1)
+		time.sleep(.1)
 		# servoS.angle = 0
 		# servoE.angle = 30
 		# servoN.angle = 0
@@ -244,22 +218,17 @@ try:
 		# Max = 2000=135, PID 3
 		# 1500+PID*2000/6
 
-		error = -0.067 - (-YZ_angle)
-		integral += error * iteration_time
-		derivative = (error - error_prior) / iteration_time
-		output = kp*error + ki*integral + kd*derivative + 0
-		error_prior = error
-		# print(kp*error, ki*integral, kd*derivative, output)
-		# print((math.degrees(-YZ_angle)+360), output, 0.5*(math.degrees(output)+360), 1500+output*2000/8, 1500-output*2000/8)
-		# pwm.set_servo_pulsewidth( servoPIN_w, min(max(1500+output*2000/8, 1000), 2000))
-		# pwm.set_servo_pulsewidth( servoPIN_e, min(max(1500-output*2000/8, 1000), 2000))
+		YZ_error = -0.067 - (-YZ_angle)
+		YZ_integral += YZ_error * iteration_time
+		YZ_derivative = (YZ_error - YZ_error_prior) / iteration_time
+		YZ_output = kp*YZ_error + ki*YZ_integral + kd*YZ_derivative + 0
+		YZ_error_prior = YZ_error
+		# print(kp*YZ_error, ki*YZ_integral, kd*YZ_derivative, YZ_output)
+		# print((math.degrees(-YZ_angle)+360), YZ_output, 0.5*(math.degrees(YZ_output)+360), 1500+YZ_output*2000/8, 1500-YZ_output*2000/8)
+		# pwm.set_servo_pulsewidth( servoPIN_w, min(max(1500+YZ_output*2000/8, 1000), 2000))
+		# pwm.set_servo_pulsewidth( servoPIN_e, min(max(1500-YZ_output*2000/8, 1000), 2000))
 		
 		# time.sleep( 3 )
-
-		angle = (Gy*iteration_time + angle_prior)*0.8 + (-YZ_angle)*0.2
-		# print(math.degrees(Gy*iteration_time + angle_prior), math.degrees(angle), math.degrees(-YZ_angle))
-		angle_prior = angle
-		# print(Gy, math.degrees(Gint), math.degrees(-YZ_angle))
 
 		#TODO:
 		# fix servos to test if we want kd or not

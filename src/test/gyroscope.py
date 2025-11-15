@@ -133,6 +133,6 @@ if __name__ == '__main__':
         axs[1].set_xlabel('Sample',fontsize=18)
         axs[0].set_ylim([-2,2]);axs[1].set_ylim([-2,2])
         axs[0].set_title('Gyroscope Calibration Offset Correction',fontsize=22)
-        fig.savefig('outputs/gyro_calibration_output.png',dpi=300,
+        fig.savefig('src/test/outputs/gyro_calibration_output.png',dpi=300,
                     bbox_inches='tight',facecolor='#FCFCFC')
         fig.show()
